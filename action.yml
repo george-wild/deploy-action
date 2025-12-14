@@ -20,57 +20,57 @@ inputs:
 runs:
   using: "composite"
   steps:
-   - name: Setup
-     shell: bash
-     run: |
-       sudo apt update
-       sudo apt upgrade
-       sudo apt install -y jq
-       
-   - name: Trigger Deployment API
-     id: trigger_deploy
-     shell: bash
-     run: |
-       API_URL="https://${{ inputs.api-host }}/deploy"
-        
-       echo "Attempting to trigger deployment via POST ${API_URL}"
-        
-       # Send the POST request to trigger the deployment
-       RESPONSE=$(curl -s -X POST "${API_URL}" \
-         -H "X-Deploy-Token: ${{ inputs.api-secret }}" \
-         -H "Content-Type: application/json" \
-         -d '{
-           "appName": "${{ inputs.app-name }}",
-           "commitSha": "${{ inputs.commit-sha }}"
-           # --- REMOVED: buildDir from the JSON payload ---
-         }')
-       
-       # Check for HTTP errors first
-       if [[ $? -ne 0 ]]; then
-           echo "::error::Curl command failed to connect to the server API."
-           exit 1
-       fi
+    - name: Setup
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt upgrade
+        sudo apt install -y jq
 
-       # Check for server-side errors (e.g., 400, 429) and extract deployment ID
-       ERROR_MESSAGE=$(echo $RESPONSE | jq -r '.error')
-       DEPLOYMENT_ID=$(echo $RESPONSE | jq -r '.deploymentId')
+    - name: Trigger Deployment API
+      id: trigger_deploy
+      shell: bash
+      run: |
+        API_URL="https://${{ inputs.api-host }}/deploy"
+         
+        echo "Attempting to trigger deployment via POST ${API_URL}"
+         
+        # Send the POST request to trigger the deployment
+        RESPONSE=$(curl -s -X POST "${API_URL}" \
+          -H "X-Deploy-Token: ${{ inputs.api-secret }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "appName": "${{ inputs.app-name }}",
+            "commitSha": "${{ inputs.commit-sha }}"
+            # --- REMOVED: buildDir from the JSON payload ---
+          }')
 
-       if [ "$ERROR_MESSAGE" != "null" ]; then
-           echo "::error::Deployment trigger failed on server: $ERROR_MESSAGE"
-           echo "Server Response: $RESPONSE"
-           exit 1
-       fi
+        # Check for HTTP errors first
+        if [[ $? -ne 0 ]]; then
+            echo "::error::Curl command failed to connect to the server API."
+            exit 1
+        fi
 
-       if [ "$DEPLOYMENT_ID" == "null" ] || [ "$DEPLOYMENT_ID" == "" ]; then
-           echo "::error::Deployment ID not returned from server. Trigger failed."
-           echo "Server Response: $RESPONSE"
-           exit 1
-       fi
+        # Check for server-side errors (e.g., 400, 429) and extract deployment ID
+        ERROR_MESSAGE=$(echo $RESPONSE | jq -r '.error')
+        DEPLOYMENT_ID=$(echo $RESPONSE | jq -r '.deploymentId')
 
-       echo "Deployment ID: $DEPLOYMENT_ID"
-       # Pass the Deployment ID to the next step
-       echo "deploymentId=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
-      
+        if [ "$ERROR_MESSAGE" != "null" ]; then
+            echo "::error::Deployment trigger failed on server: $ERROR_MESSAGE"
+            echo "Server Response: $RESPONSE"
+            exit 1
+        fi
+
+        if [ "$DEPLOYMENT_ID" == "null" ] || [ "$DEPLOYMENT_ID" == "" ]; then
+            echo "::error::Deployment ID not returned from server. Trigger failed."
+            echo "Server Response: $RESPONSE"
+            exit 1
+        fi
+
+        echo "Deployment ID: $DEPLOYMENT_ID"
+        # Pass the Deployment ID to the next step
+        echo "deploymentId=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+
     - name: Poll Status and Stream Logs
       shell: bash
       id: poll_logs
@@ -80,7 +80,7 @@ runs:
         STATUS_URL="http://${{ inputs.api-host }}:${{ inputs.api-port }}/status/${DEPLOYMENT_ID}"
         DEPLOY_STATUS="RUNNING"
         LOG_INDEX=0 # Track which logs have already been printed
-        
+
         echo "Starting log stream for Deployment ID: $DEPLOYMENT_ID. Polling every 5 seconds."
 
         while [ "$DEPLOY_STATUS" == "RUNNING" ]; do
