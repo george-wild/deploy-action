@@ -16,9 +16,6 @@ inputs:
   app-name:
     description: "The name of the app, e.g. 'george-wild/deploy-action'."
     required: true
-  deployment-id:
-    description: "The unique Deployment ID, often related to the action call."
-    required: true
 
 runs:
   using: "composite"
@@ -40,11 +37,12 @@ runs:
         
         # Send the POST request to trigger the deployment
         RESPONSE=$(curl -s -X POST "${API_URL}" \
-          -H "X-Secret: ${{ inputs.api-secret }}" \
+          -H "X-Deploy-Token: ${{ inputs.api-secret }}" \
           -H "Content-Type: application/json" \
           -d '{
             "appName": "${{ inputs.app-name }}",
-            "commitSha": "${{ inputs.commit-sha }}",
+            "commitSha": "${{ inputs.commit-sha }}"
+            # --- REMOVED: buildDir from the JSON payload ---
           }')
         
         # Check for HTTP errors first
