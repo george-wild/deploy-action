@@ -11,7 +11,7 @@ inputs:
     description: "The secret token for API authentication."
     required: true
   app-name:
-    description: "The name of the app, e.g. \'george-wild/deploy-action'."
+    description: "The name of the app, e.g. 'george-wild/deploy-action'."
     required: true
   deployment-id:
     description: "The unique Deployment ID, often related to the action call."
