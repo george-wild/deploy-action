@@ -44,7 +44,7 @@ runs:
             # --- REMOVED: buildDir from the JSON payload ---
           }')
 
-        echo RESPONSE
+        echo $RESPONSE
         # Check for HTTP errors first
         if [[ $? -ne 0 ]]; then
             echo "::error::Curl command failed to connect to the server API."
