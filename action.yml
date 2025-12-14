@@ -33,16 +33,17 @@ runs:
         API_URL="https://${{ inputs.api-host }}/deploy"
          
         echo "Attempting to trigger deployment via POST ${API_URL}"
+
+        PAYLOAD=$(jq -n \
+          --arg app "${{ inputs.app-name }}" \
+          --arg sha "${{ inputs.commit-sha }}" \
+          '{appName: $app, commitSha: $sha}')
          
         # Send the POST request to trigger the deployment
         RESPONSE=$(curl -s -X POST "${API_URL}" \
           -H "X-Deploy-Token: ${{ inputs.api-secret }}" \
           -H "Content-Type: application/json" \
-          -d '{
-            "appName": "${{ inputs.app-name }}",
-            "commitSha": "${{ inputs.commit-sha }}"
-            # --- REMOVED: buildDir from the JSON payload ---
-          }')
+          -d "$PAYLOAD")
 
         echo $RESPONSE
         # Check for HTTP errors first
