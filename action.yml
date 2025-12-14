@@ -10,6 +10,9 @@ inputs:
   api-secret:
     description: "The secret token for API authentication."
     required: true
+  commit-sha:
+    description: "The SHA for the commit."
+    required: true
   app-name:
     description: "The name of the app, e.g. 'george-wild/deploy-action'."
     required: true
@@ -31,18 +34,17 @@ runs:
       id: trigger_deploy
       shell: bash
       run: |
-        API_URL="http://${{ inputs.api-host }}:${{ inputs.api-port }}/deploy"
+        API_URL="https://${{ inputs.api-host }}/deploy"
         
         echo "Attempting to trigger deployment via POST ${API_URL}"
         
         # Send the POST request to trigger the deployment
         RESPONSE=$(curl -s -X POST "${API_URL}" \
-          -H "X-Deploy-Token: ${{ inputs.api-token }}" \
+          -H "X-Secret: ${{ inputs.api-secret }}" \
           -H "Content-Type: application/json" \
           -d '{
             "appName": "${{ inputs.app-name }}",
             "commitSha": "${{ inputs.commit-sha }}",
-            "buildDir": "${{ inputs.build-dir-name }}"
           }')
         
         # Check for HTTP errors first
@@ -88,7 +90,7 @@ runs:
           
           # Use curl to get the latest status
           RESPONSE=$(curl -s -X GET "${STATUS_URL}" \
-            -H "X-Deploy-Token: ${{ inputs.api-token }}")
+            -H "X-Secret: ${{ inputs.api-secret }}")
             
           # Safely parse status and logs using jq
           DEPLOY_STATUS=$(echo $RESPONSE | jq -r '.status')
